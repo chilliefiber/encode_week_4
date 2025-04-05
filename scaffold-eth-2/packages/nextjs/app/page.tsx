@@ -1,8 +1,33 @@
 "use client";
 import type { NextPage } from "next";
 import { useEffect, useState } from "react";
-import { Address, hexToString } from "viem";
-import { useAccount, useBalance, useReadContract, useSignMessage } from "wagmi";
+import { Address, formatUnits, hexToString } from "viem";
+import { useAccount, useBalance, useReadContract, useReadContracts, useSignMessage } from "wagmi";
+
+// global variables are ugly code
+const token_address = "0x5e691869bd13b7d8adf8658e8d18f4e2163ddc90";
+const ballot_address = "0x6286467ccbc7030a5a3676e7a135a478c8713c1c";
+
+const erc20Abi = [
+  {
+    constant: true,
+    inputs: [{ name: "_owner", type: "address" }],
+    name: "balanceOf",
+    outputs: [{ name: "balance", type: "uint256" }],
+    payable: false,
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: "decimals",
+    outputs: [{ name: "", type: "uint8" }],
+    payable: false,
+    stateMutability: "view",
+    type: "function",
+  },
+];
 
 const Home: NextPage = () => {
   return (
@@ -50,6 +75,7 @@ function WalletInfo() {
       <div>
         <p>Your account address is {address}</p>
         <p>Connected to the network {chain?.name}</p>
+        <TokenInfo address={address as `0x${string}`}></TokenInfo>
         <ApiData address={address as `0x${string}`}></ApiData>
       </div>
     );
@@ -196,7 +222,7 @@ function TokenInfo(params: { address: `0x${string}` }) {
  */
 function TokenName() {
   const { data, isError, isLoading } = useReadContract({
-    address: "0x5e691869bd13b7d8adf8658e8d18f4e2163ddc90", // deployed contract's address
+    address: token_address, // deployed contract's address
     abi: [
       // inside the "{}" is the ABI for one function in this contract. We could
       // have multiple such brackets, and then we would have to choose which one
@@ -230,45 +256,40 @@ function TokenName() {
 /**
  * Uses the wagmi useReadContract hook, a hook for calling a read-only (pure or view) function on a contract, and returning the response.
  * In this scenario, we don't pay for gas
- * In this case, the function 
+ * In this case, the function has an argument
  * 
  */
 function TokenBalance(params: { address: `0x${string}` }) {
-  const { data, isError, isLoading } = useReadContract({
-    address: "0x5e691869bd13b7d8adf8658e8d18f4e2163ddc90", // address of the token contract
-    abi: [
+  const { data, isError, isLoading } = useReadContracts({
+    contracts: [
       {
-        constant: true,
-        inputs: [
-          {
-            name: "_owner", // note that it is the owner of a particular balance, not necessarily the owner of the contract
-            type: "address",
-          },
-        ],
-        name: "balanceOf",
-        outputs: [
-          {
-            name: "balance",
-            type: "uint256",
-          },
-        ],
-        payable: false,
-        stateMutability: "view",
-        type: "function",
+        address: token_address,
+        abi: erc20Abi,
+        functionName: "decimals",
+      },
+      {
+        address: token_address,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [params.address],
       },
     ],
-    functionName: "balanceOf",
-    args: [params.address], // use the address provided as a parameter to TokenBalance as the argument to the function balanceOf
   });
 
   if (isLoading) return <div>Fetching balance…</div>;
-  if (isError) return <div>Error fetching balance</div>;
+  if (isError || !data || !data[0].result || ! data[1].result) return <div>Error fetching balance</div>;
+
+  const decimals = Number(data[0].result);
     // the code had a bug and it was originally
   //   const balance = typeof data === "number" ? data : 0;
   // I was getting 0 all the time
-  const balance = (data as bigint).toString();
+  const balance = data[1].result as bigint;
+  const balance_formatted = formatUnits(balance, decimals);
 
-  return <div>Balance: {balance}</div>;
+  return (<div>
+          <div>Balance raw: {balance.toString()}</div>
+          <div>Balance formatted: {balance_formatted}</div>
+          </div>);
 }
 
 /**
