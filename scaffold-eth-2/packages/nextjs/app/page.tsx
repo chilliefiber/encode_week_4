@@ -1,12 +1,16 @@
 "use client";
 import type { NextPage } from "next";
 import { useEffect, useState } from "react";
-import { Address, formatUnits, hexToString } from "viem";
+import { Address, formatUnits, hexToString, Abi, fromHex } from "viem";
 import { useAccount, useBalance, useReadContract, useReadContracts, useSignMessage } from "wagmi";
 
 // global variables are ugly code
 const tokenAddress = "0x5e691869bd13b7d8adf8658e8d18f4e2163ddc90";
 const ballotAddress = "0x6286467ccbc7030a5a3676e7a135a478c8713c1c";
+// number of proposals in the ballot. If I could change the code of the ballot contract, it would be nice
+// to add a getter for this. However, I'm sticking to the TokenizedBallot provided in week3, so we have
+// to hardcode this
+const numberOfProposals = 3;
 
 const tokenAbi = [
   {
@@ -44,7 +48,17 @@ const ballotAbi = [
     inputs: [],
     outputs: [{ name: "winnerName_", type: "bytes32" }],
   },
-];
+  {
+    name: "proposals",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "uint256" }],
+    outputs: [
+      { name: "name", type: "bytes32" },
+      { name: "voteCount", type: "uint256" },
+    ],
+  },
+] as const satisfies Abi;
 
 const Home: NextPage = () => {
   return (
@@ -95,6 +109,7 @@ function WalletInfo() {
         <TokenInfo address={address as `0x${string}`}></TokenInfo>
         <ApiData address={address as `0x${string}`}></ApiData>
         <DisplayVotingResults/>
+        <DisplayProposals/>
       </div>
     );
   if (isConnecting)
@@ -139,6 +154,50 @@ function DisplayVotingResults() {
   const proposalNameBytes32 = data[1].result as `0x${string}`;
   const winningProposalName = hexToString(proposalNameBytes32, { size: 32 }).replace(/\0/g, '');
   return <div>winningProposalNumber is {winningProposalNumber} and proposal is {winningProposalName}</div>
+}
+
+
+function DisplayProposals() {
+  const proposalCalls = Array.from({ length: numberOfProposals }, (_, i) => ({
+    address: ballotAddress,
+    abi: ballotAbi,
+    functionName: "proposals",
+    args: [BigInt(i)],
+  }));
+
+  const {
+    data: proposalsData,
+    isLoading,
+    isError,
+  } = useReadContracts({
+    contracts: proposalCalls,
+    allowFailure: true,
+  });
+
+  if (isLoading) return <div>Loading proposals…</div>;
+  if (isError || !proposalsData) return <div>Error loading proposals</div>;
+
+  return (
+    <div>
+      <h2>Proposals</h2>
+      <p>Note that we show them in decimals because votes are with decimals. We could have formatted</p>
+      <ul>
+      {proposalsData.map((res, i) => {
+  if (!res.result || !Array.isArray(res.result)) {
+    return <li key={i}>Error loading proposal #{i}</li>;
+  }
+
+  const [nameBytes, voteCount] = res.result as unknown as [`0x${string}`, bigint];
+  const name = fromHex(nameBytes, "string");
+
+  return (
+    <li key={i}>
+      <strong>{name}</strong> — Votes: {voteCount.toString()}
+    </li>
+  );
+})}      </ul>
+    </div>
+  );
 }
 
 /*
