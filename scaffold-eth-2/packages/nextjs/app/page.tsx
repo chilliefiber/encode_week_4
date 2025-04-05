@@ -5,10 +5,10 @@ import { Address, formatUnits, hexToString } from "viem";
 import { useAccount, useBalance, useReadContract, useReadContracts, useSignMessage } from "wagmi";
 
 // global variables are ugly code
-const token_address = "0x5e691869bd13b7d8adf8658e8d18f4e2163ddc90";
-const ballot_address = "0x6286467ccbc7030a5a3676e7a135a478c8713c1c";
+const tokenAddress = "0x5e691869bd13b7d8adf8658e8d18f4e2163ddc90";
+const ballotAddress = "0x6286467ccbc7030a5a3676e7a135a478c8713c1c";
 
-const erc20Abi = [
+const tokenAbi = [
   {
     constant: true,
     inputs: [{ name: "_owner", type: "address" }],
@@ -26,6 +26,23 @@ const erc20Abi = [
     payable: false,
     stateMutability: "view",
     type: "function",
+  },
+];
+
+const ballotAbi = [
+  {
+    name: "winningProposal",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "winningProposal_", type: "uint256" }],
+  },
+  {
+    name: "winnerName",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "winnerName_", type: "bytes32" }],
   },
 ];
 
@@ -77,6 +94,7 @@ function WalletInfo() {
         <p>Connected to the network {chain?.name}</p>
         <TokenInfo address={address as `0x${string}`}></TokenInfo>
         <ApiData address={address as `0x${string}`}></ApiData>
+        <DisplayVotingResults/>
       </div>
     );
   if (isConnecting)
@@ -96,6 +114,31 @@ function WalletInfo() {
       <p>Connect wallet to continue</p>
     </div>
   );
+}
+
+function DisplayVotingResults() {
+  const { data, isLoading, isError } = useReadContracts({
+    contracts: [
+      {
+        address: ballotAddress,
+        abi: ballotAbi,
+        functionName: "winningProposal",
+      },
+      {
+        address: ballotAddress,
+        abi: ballotAbi,
+        functionName: "winnerName",
+      },
+    ],
+  });
+
+  if (isLoading) return <div>Loading winner info...</div>;
+  if (isError || !data || data.length != 2)
+    return <div>Error loading winner info</div>;
+  const winningProposalNumber = data[0].result as bigint;
+  const proposalNameBytes32 = data[1].result as `0x${string}`;
+  const winningProposalName = hexToString(proposalNameBytes32, { size: 32 }).replace(/\0/g, '');
+  return <div>winningProposalNumber is {winningProposalNumber} and proposal is {winningProposalName}</div>
 }
 
 /*
@@ -222,7 +265,7 @@ function TokenInfo(params: { address: `0x${string}` }) {
  */
 function TokenName() {
   const { data, isError, isLoading } = useReadContract({
-    address: token_address, // deployed contract's address
+    address: tokenAddress, // deployed contract's address
     abi: [
       // inside the "{}" is the ABI for one function in this contract. We could
       // have multiple such brackets, and then we would have to choose which one
@@ -263,13 +306,13 @@ function TokenBalance(params: { address: `0x${string}` }) {
   const { data, isError, isLoading } = useReadContracts({
     contracts: [
       {
-        address: token_address,
-        abi: erc20Abi,
+        address: tokenAddress,
+        abi: tokenAbi,
         functionName: "decimals",
       },
       {
-        address: token_address,
-        abi: erc20Abi,
+        address: tokenAddress,
+        abi: tokenAbi,
         functionName: "balanceOf",
         args: [params.address],
       },
