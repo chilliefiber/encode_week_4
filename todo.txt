@@ -1,0 +1,46 @@
+Done:
+	Display voting results (from a hardcoded ballot address)
+	Display my balance (from a hardcoded ballot address)
+	Display all proposals, and all the votes from there (from a hardcoded ballot address)
+	Minting tokens (with a hardcoded token address)
+--------------------------------------------------------------------------------------------------------------------------------
+Todo basic evaluation:
+	Rewrite the flow of the app to remove the hardcoded ballot address
+	Deploy the ballot from the frontend
+	Cast votes
+	Delegate
+	
+Todo bonus evaluation:
+	Store recent votes on backend and list them on the frontend
+	When deploying the ballot from the frontend, use an oracle in the constructor to fetch off-chain data
+
+Homework (around minute 30 of lesson 16)
+
+Write the mintTokens function in the app.service.ts
+
+Create a dApp for tokenized ballot. 
+	-Display proposals, display my balance, display voting results, from the frontend to the blockchain
+	- Request voting tokens using the API, with no authentication (later
+	with some gatekeeping or signature stuff, but now just frontend asking the backend, completely off chain)
+	- To list the recent votes on the frontend directly from the smart contract it's very tricky, you need
+	to get the Events and past transactions. If you keep it in the backend, everytime someone makes a vote you keep that and store it in a variable (no need for a database, store in memory or a json) and you can display that
+	in the frontend. You can also cheat and make the frontend call the 
+	backend to store that log and then you can visualize that in the frontend
+	
+Minute 51 not sure if it's about the homework
+
+Have a button to request tokens. Before starting the ballot, click a
+button, fill a form, request tokens to be minted to my wallet.
+Another button to self delegate directly from the frontend to the
+blockchain, and then deploy the ballot and then cast votes.
+
+Minute 55:34
+About the minting tokens
+
+When the transaction is included in the blockchain, we get the transaction receipt
+by hash, and answer in the frontend "you have minted this, this is now
+the balance", then self delegate, then deploy
+--------------------------------------------------------------------------------------------------------------------------------
+Stuff that won't be evaluated but would be important in a real dApp:
+Making a request tokens button that did not require a page refresh to request more tokens. It's just frontend logic
+Validating inputs. For example in the controller for minting tokens we don't check that we have a legitimate address

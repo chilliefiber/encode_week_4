@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import * as tokenJson from "./assets/MyToken.json";
-import { Address, createPublicClient, createWalletClient, formatEther, http } from 'viem';
+import tokenJson = require('./assets/MyToken.json');
+import { Address, createPublicClient, createWalletClient, encodeFunctionData, formatEther, http, parseEther } from 'viem';
 import { sepolia } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 
@@ -23,7 +23,6 @@ export class AppService {
       chain: sepolia,
       account: account,
     });
-
   }
 
   async getTransactionReceipt(hash: string) {
@@ -97,12 +96,23 @@ export class AppService {
     return hasRole;
   }
 
-  mintTokens(address: any) {
-    // TODO: implement mintTokens using server wallet
-    // we put this in the server because we are doing the
-    // minting with our account
-    return {result:true,
-            address: address};
+  // we put this in the server because we are doing the
+  // minting with our account
+  async mintTokens(to: `0x${string}`): Promise<`0x${string}`> {
+    // currently hardcoded, but in a real app would probably be a part of the POST arguments
+    // I'm just following what was done in the lessons
+    const amount = 1;
+    const mintTx = await this.walletClient.writeContract({
+      address: this.getContractAddress() as `0x${string}`,
+      abi: tokenJson.abi,
+      functionName: "mint",
+      args: [to, parseEther(amount.toString())],
+    });
+
+    // wait for the confirmation of the transaction
+    await this.publicClient.waitForTransactionReceipt({ hash: mintTx });
+
+    return mintTx;
   }
   /*
   return {

@@ -444,7 +444,7 @@ function TokenAddressFromApi() {
  */
 function RequestTokens(params: { address: string }) {
   // data stores the backend response
-  const [data, setData] = useState<{ result: boolean }>();
+  const [data, setData] = useState<{ result: string }>();
   // isLoading will be changed to true when we click the button
   // to do the POST request. 
   const [isLoading, setLoading] = useState(false);
@@ -485,7 +485,7 @@ function RequestTokens(params: { address: string }) {
   // this is when the backend has replied to a previous POST request.
   return (
     <div>
-      <p>Result from API: {data.result ? "worked" : "failed"}</p>
+      <p>Result transaction: {data.result}</p>
       <p>If you want to request more tokens, refresh the page</p>
     </div>
   );

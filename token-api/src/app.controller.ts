@@ -49,6 +49,7 @@ export class AppController {
 
   @Post('mint-tokens')
   async mintTokens(@Body() body: MintTokenDto) {
-    return {result: await this.appService.mintTokens(body.address)};
+    // TODO validate that the body.address is a `0x${string}`
+    return {result: await this.appService.mintTokens(body.address as `0x${string}`)};
   }
 }
