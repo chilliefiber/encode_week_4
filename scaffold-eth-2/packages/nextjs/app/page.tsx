@@ -123,7 +123,7 @@ function WalletInfo() {
         <p>Connected to the network {chain?.name}</p>
         <TokenInfo address={address as `0x${string}`}></TokenInfo>
         <ProposalsInfo/>
-        <ApiData address={address as `0x${string}`}></ApiData>
+        <UserTokens address={address as `0x${string}`}></UserTokens>
       </div>
     );
   if (isConnecting)
@@ -328,16 +328,13 @@ function WalletBalance(params: { address: `0x${string}` }) {
   );
 }
 
-/**
- * Frontend function to group TokenName and TokenBalance
- */
-function TokenInfo(params: { address: `0x${string}` }) {
+function TokenInfo() {
   return (
     <div className="card w-96 bg-primary text-primary-content mt-4">
       <div className="card-body">
         <h2 className="card-title">Token Info</h2>
         <TokenName></TokenName>
-        <TokenBalance address={params.address}></TokenBalance>
+        <TokenAddressFromApi></TokenAddressFromApi>
       </div>
     </div>
   );
@@ -397,20 +394,16 @@ function TokenBalance(params: { address: `0x${string}` }) {
   const balance_formatted = formatUnits(balance, decimals);
 
   return (<div>
-          <div>Balance raw: {balance.toString()}</div>
-          <div>Balance formatted: {balance_formatted}</div>
+          <div>Your balance raw: {balance.toString()}</div>
+          <div>Your balance formatted: {balance_formatted}</div>
           </div>);
 }
 
-/**
- * Frontend wrapper for showing the results of TokenAddressFromApi and RequestTokens
- */
-function ApiData(params: { address: Address }) {
+function UserTokens(params: { address: `0x${string}` }) {
   return (
     <div className="card w-96 bg-primary text-primary-content mt-4">
       <div className="card-body">
-        <h2 className="card-title">Testing API Coupling</h2>
-        <TokenAddressFromApi></TokenAddressFromApi>
+        <h2 className="card-title">Your tokens</h2>
         <RequestTokens address={params.address}></RequestTokens>
       </div>
     </div>
@@ -450,7 +443,7 @@ function TokenAddressFromApi() {
  * @todo If I have more time to play with the frontend, I would like to make it so that we don't have
  * to refresh the page to request tokens more times
  */
-function RequestTokens(params: { address: string }) {
+function RequestTokens(params: { address: `0x${string}` }) {
   // data stores the backend response
   const [data, setData] = useState<{ result: string }>();
   // isLoading will be changed to true when we click the button
@@ -464,12 +457,15 @@ function RequestTokens(params: { address: string }) {
 
   // this is when the user has pressed the button to request tokens,
   // but we are waiting for the backend to respond
-  if (isLoading) return <p>Requesting tokens from API...</p>;
+  if (isLoading) return (
+    <div>
+        <p>Requesting tokens from API...</p></div>);
 
   // when there is no data to show, because the user still hasn't clicked the
   // button to request tokens
   if (!data)
     return (
+      <div>        <TokenBalance address={params.address}></TokenBalance>
       <button
         className="btn btn-active btn-neutral"
         onClick={() => {
@@ -487,15 +483,32 @@ function RequestTokens(params: { address: string }) {
         }}
       >
         Request tokens
-      </button>
+      </button></div>
     );
 
   // this is when the backend has replied to a previous POST request.
   return (
     <div>
-      <p>Result transaction: {data.result}</p>
-      <p>If you want to request more tokens, refresh the page</p>
-    </div>
+      <TokenBalance address={params.address}></TokenBalance>
+      <p>Last mint transaction: {data.result}</p>
+      <button
+        className="btn btn-active btn-neutral"
+        onClick={() => {
+          setLoading(true);
+          fetch("http://localhost:3001/mint-tokens", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body), // we are sending the address as a JSON
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              setData(data);
+              setLoading(false);
+            });
+        }}
+      >
+        Request tokens
+      </button>    </div>
   );
 }
 
