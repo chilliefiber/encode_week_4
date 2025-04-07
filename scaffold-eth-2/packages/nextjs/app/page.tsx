@@ -32,6 +32,20 @@ const tokenAbi = [
     stateMutability: "view",
     type: "function",
   },
+  {
+    constant: true, // read only function
+    inputs: [], // takes zero parameters
+    name: "name", // name of this function of the ABI
+    outputs: [ // returns a single string
+      {
+        name: "",
+        type: "string",
+      },
+    ],
+    payable: false,
+    stateMutability: "view", // this function is a view function
+    type: "function", // contract function, not an event or constructor
+  },
 ];
 
 const ballotAbi = [
@@ -108,8 +122,8 @@ function WalletInfo() {
         <p>Your account address is {address}</p>
         <p>Connected to the network {chain?.name}</p>
         <TokenInfo address={address as `0x${string}`}></TokenInfo>
+        <ProposalsInfo/>
         <ApiData address={address as `0x${string}`}></ApiData>
-        <BallotInfo/>
       </div>
     );
   if (isConnecting)
@@ -131,11 +145,11 @@ function WalletInfo() {
   );
 }
 
-function BallotInfo() {
+function ProposalsInfo() {
   return (
     <div className="card w-96 bg-primary text-primary-content mt-4">
       <div className="card-body">
-        <h2 className="card-title">Current Ballot Info</h2>
+        <h2 className="card-title">Proposals Info</h2>
         <DisplayVotingResults/>
         <DisplayProposals/>
       </div>
@@ -169,7 +183,6 @@ function DisplayVotingResults() {
   const winningProposalName = hexToString(proposalNameBytes32, { size: 32 }).replace(/\0/g, '');
   return <div>winningProposalNumber is {winningProposalNumber} and proposal is {winningProposalName}</div>
 }
-
 
 function DisplayProposals() {
   if (ballotAddress == "")
@@ -322,7 +335,7 @@ function TokenInfo(params: { address: `0x${string}` }) {
   return (
     <div className="card w-96 bg-primary text-primary-content mt-4">
       <div className="card-body">
-        <h2 className="card-title">Testing useReadContract wagmi hook</h2>
+        <h2 className="card-title">Token Info</h2>
         <TokenName></TokenName>
         <TokenBalance address={params.address}></TokenBalance>
       </div>
@@ -339,26 +352,7 @@ function TokenInfo(params: { address: `0x${string}` }) {
 function TokenName() {
   const { data, isError, isLoading } = useReadContract({
     address: tokenAddress, // deployed contract's address
-    abi: [
-      // inside the "{}" is the ABI for one function in this contract. We could
-      // have multiple such brackets, and then we would have to choose which one
-      // to call using functionName. In this case, it is redundant to use functionName
-      // because we only give one of the functions of the ABI
-      {
-        constant: true, // read only function
-        inputs: [], // takes zero parameters
-        name: "name", // name of this function of the ABI
-        outputs: [ // returns a single string
-          {
-            name: "",
-            type: "string",
-          },
-        ],
-        payable: false,
-        stateMutability: "view", // this function is a view function
-        type: "function", // contract function, not an event or constructor
-      },
-    ],
+    abi: tokenAbi,
     functionName: "name", // name of the function to call from the ABI provided
   });
 
