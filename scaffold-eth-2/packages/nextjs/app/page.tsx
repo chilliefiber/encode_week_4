@@ -6,7 +6,8 @@ import { useAccount, useBalance, useReadContract, useReadContracts, useSignMessa
 
 // global variables are ugly code
 const tokenAddress = "0x5e691869bd13b7d8adf8658e8d18f4e2163ddc90";
-const ballotAddress = "0x6286467ccbc7030a5a3676e7a135a478c8713c1c";
+let ballotAddress = "0x6286467ccbc7030a5a3676e7a135a478c8713c1c";
+
 // number of proposals in the ballot. If I could change the code of the ballot contract, it would be nice
 // to add a getter for this. However, I'm sticking to the TokenizedBallot provided in week3, so we have
 // to hardcode this
@@ -108,8 +109,7 @@ function WalletInfo() {
         <p>Connected to the network {chain?.name}</p>
         <TokenInfo address={address as `0x${string}`}></TokenInfo>
         <ApiData address={address as `0x${string}`}></ApiData>
-        <DisplayVotingResults/>
-        <DisplayProposals/>
+        <BallotInfo/>
       </div>
     );
   if (isConnecting)
@@ -131,7 +131,21 @@ function WalletInfo() {
   );
 }
 
+function BallotInfo() {
+  return (
+    <div className="card w-96 bg-primary text-primary-content mt-4">
+      <div className="card-body">
+        <h2 className="card-title">Current Ballot Info</h2>
+        <DisplayVotingResults/>
+        <DisplayProposals/>
+      </div>
+    </div>
+  );
+}
+
 function DisplayVotingResults() {
+  if (ballotAddress == "")
+    return ;
   const { data, isLoading, isError } = useReadContracts({
     contracts: [
       {
@@ -158,6 +172,8 @@ function DisplayVotingResults() {
 
 
 function DisplayProposals() {
+  if (ballotAddress == "")
+    return;
   const proposalCalls = Array.from({ length: numberOfProposals }, (_, i) => ({
     address: ballotAddress,
     abi: ballotAbi,
@@ -179,8 +195,6 @@ function DisplayProposals() {
 
   return (
     <div>
-      <h2>Proposals</h2>
-      <p>Note that we show them in decimals because votes are with decimals. We could have formatted</p>
       <ul>
       {proposalsData.map((res, i) => {
   if (!res.result || !Array.isArray(res.result)) {

@@ -5,10 +5,11 @@ Done:
 	Minting tokens (with a hardcoded token address)
 --------------------------------------------------------------------------------------------------------------------------------
 Todo basic evaluation:
-	Rewrite the flow of the app to remove the hardcoded ballot address
-	Deploy the ballot from the frontend
-	Cast votes
-	Delegate
+	Self-Delegate from the frontend (just uses the token address). Show votes (in Token) before and after delegating like in SelfDelegateVotingPower.ts
+	Cast votes from the frontend (just uses the ballot address). Show remainingVotingPower (in Ballot) before and after.
+	Rewrite the flow of the app to remove the hardcoded ballot address, and have a button to deploy the ballot from the frontend
+	
+	
 	
 Todo bonus evaluation:
 	Store recent votes on backend and list them on the frontend
